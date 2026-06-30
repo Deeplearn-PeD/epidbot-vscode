@@ -99,12 +99,41 @@ export function activate(context: vscode.ExtensionContext): void {
           return;
         }
         try {
-          const response = await client.searchSnippets(query, getSelectedSessionId());
-          const snippets = response.results.filter(isSnippetResult);
-          if (snippets.length === 0) {
+          const [searchResponse, plots] = await Promise.all([
+            client.searchSnippets(query, getSelectedSessionId()),
+            client.listPlots(query),
+          ]);
+
+          const snippets = searchResponse.results.filter(isSnippetResult);
+
+          const plotSnippets: SnippetResult[] = plots
+            .filter((p) => p.code_snippet && p.code_snippet.trim())
+            .map((p) => ({
+              source_type: 'snippet' as const,
+              title: `${p.filename.replace(/\.(png|jpg|jpeg|webp|gif|svg)$/i, '')} (plot code)`,
+              description: p.description || `Plot code for ${p.filename}`,
+              language: 'python' as const,
+              source_code: p.code_snippet!,
+              tags: [],
+              rank: 0,
+              session_id: 0,
+              session_name: '',
+              created_at: p.created_at,
+            }));
+
+          const seen = new Set<string>();
+          const allSnippets: SnippetResult[] = [];
+          for (const s of [...snippets, ...plotSnippets]) {
+            const key = s.source_code.trim();
+            if (!seen.has(key)) {
+              seen.add(key);
+              allSnippets.push(s);
+            }
+          }
+          if (allSnippets.length === 0) {
             vscode.window.showInformationMessage(`No snippets found for "${query}". Try a different term.`);
           }
-          snippetsProvider.setSearchResults(query, snippets);
+          snippetsProvider.setSearchResults(query, allSnippets);
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Unknown error';
           vscode.window.showErrorMessage(`Search failed: ${message}`);

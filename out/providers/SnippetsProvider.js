@@ -40,7 +40,14 @@ class SnippetTreeItem extends vscode.TreeItem {
     constructor(snippet, isChild) {
         super(snippet.title, isChild ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
         this.snippet = snippet;
-        this.description = snippet.language;
+        const descParts = [snippet.language];
+        if (snippet.description && snippet.description.trim()) {
+            const shortDesc = snippet.description.length > 80
+                ? snippet.description.slice(0, 77) + '...'
+                : snippet.description;
+            descParts.push(shortDesc);
+        }
+        this.description = descParts.join(' — ');
         this.tooltip = `${snippet.title}\nLanguage: ${snippet.language}\n${snippet.description}\nTags: ${snippet.tags.join(', ')}`;
         this.contextValue = 'snippetItem';
         this.iconPath = this.getLanguageIcon(snippet.language);
