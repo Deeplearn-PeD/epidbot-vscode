@@ -1,8 +1,11 @@
 # Epidbot for VS Code
 
-Browse and download your EpidBot code snippets, reports, and plots directly from VS Code.
+[![GitHub Release](https://img.shields.io/github/v/release/Deeplearn-PeD/epidbot-vscode?label=release&color=blue)](https://github.com/Deeplearn-PeD/epidbot-vscode/releases)
+[![VS Code](https://img.shields.io/badge/VS%20Code-%3E%3D1.90.0-blue?logo=visualstudiocode)](https://code.visualstudio.com/)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![GitHub Downloads](https://img.shields.io/github/downloads/Deeplearn-PeD/epidbot-vscode/total?label=downloads)](https://github.com/Deeplearn-PeD/epidbot-vscode/releases)
 
-![Epidbot](https://img.shields.io/badge/Epidbot-VS%20Code-blue)
+Browse and download your EpidBot code snippets, reports, and plots directly from VS Code.
 
 ## Features
 
@@ -22,16 +25,17 @@ Browse and download your EpidBot code snippets, reports, and plots directly from
 
 ## Installation
 
-### From VSIX
+### From GitHub Releases
+
+Download the latest `.vsix` from the [Releases page](https://github.com/Deeplearn-PeD/epidbot-vscode/releases), then:
 
 ```bash
-npm install
-npm run compile
-npx vsce package
-code --install-extension epidbot-vscode-0.1.0.vsix
+code --install-extension epidbot-vscode-*.vsix
 ```
 
-### Development
+Or in VS Code: `Ctrl+Shift+P` → **Extensions: Install from VSIX...** → select the downloaded file.
+
+### From Source
 
 ```bash
 git clone https://github.com/Deeplearn-PeD/epidbot-vscode.git
