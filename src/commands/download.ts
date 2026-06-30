@@ -58,6 +58,60 @@ export async function downloadReport(client: EpidbotClient | null, reportId: num
   }
 }
 
+export async function downloadReportLatex(client: EpidbotClient | null, reportId: number, title: string): Promise<void> {
+  if (!client) {
+    vscode.window.showErrorMessage('Epidbot: Not configured. Run "Epidbot: Configure API Key" first.');
+    return;
+  }
+
+  const defaultName = sanitizeFilename(title) + '.tex';
+
+  const uri = await vscode.window.showSaveDialog({
+    defaultUri: vscode.Uri.file(path.join(getDefaultDownloadDir(), defaultName)),
+    filters: { 'LaTeX': ['tex'] },
+  });
+
+  if (!uri) {
+    return;
+  }
+
+  try {
+    const data = await client.downloadReportLatex(reportId);
+    await vscode.workspace.fs.writeFile(uri, new Uint8Array(data));
+    vscode.window.showInformationMessage(`LaTeX saved to ${uri.fsPath}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    vscode.window.showErrorMessage(`Failed to save LaTeX: ${message}`);
+  }
+}
+
+export async function downloadReportLatexZip(client: EpidbotClient | null, reportId: number, title: string): Promise<void> {
+  if (!client) {
+    vscode.window.showErrorMessage('Epidbot: Not configured. Run "Epidbot: Configure API Key" first.');
+    return;
+  }
+
+  const defaultName = sanitizeFilename(title) + '.zip';
+
+  const uri = await vscode.window.showSaveDialog({
+    defaultUri: vscode.Uri.file(path.join(getDefaultDownloadDir(), defaultName)),
+    filters: { 'ZIP Archive': ['zip'] },
+  });
+
+  if (!uri) {
+    return;
+  }
+
+  try {
+    const data = await client.downloadReportLatexZip(reportId);
+    await vscode.workspace.fs.writeFile(uri, new Uint8Array(data));
+    vscode.window.showInformationMessage(`LaTeX bundle saved to ${uri.fsPath}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    vscode.window.showErrorMessage(`Failed to save LaTeX bundle: ${message}`);
+  }
+}
+
 export async function downloadPlotCode(client: EpidbotClient | null, plotId: number, filename: string): Promise<void> {
   if (!client) {
     vscode.window.showErrorMessage('Epidbot: Not configured. Run "Epidbot: Configure API Key" first.');

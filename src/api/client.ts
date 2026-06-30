@@ -88,6 +88,20 @@ export class EpidbotClient {
     return data;
   }
 
+  async downloadReportLatex(id: number): Promise<ArrayBuffer> {
+    const { data } = await this.client.get<ArrayBuffer>(`/reports/${id}/latex`, {
+      responseType: 'arraybuffer',
+    });
+    return data;
+  }
+
+  async downloadReportLatexZip(id: number): Promise<ArrayBuffer> {
+    const { data } = await this.client.get<ArrayBuffer>(`/reports/${id}/latex-zip`, {
+      responseType: 'arraybuffer',
+    });
+    return data;
+  }
+
   async listPlots(search?: string): Promise<Plot[]> {
     const params: Record<string, string> = {};
     if (search) {

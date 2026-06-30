@@ -101,9 +101,21 @@
       },
       {
         "command": "epidbot.downloadReport",
-        "title": "Download Report",
+        "title": "Download Report (Markdown)",
         "category": "Epidbot",
         "icon": "$(cloud-download)"
+      },
+      {
+        "command": "epidbot.downloadReportLatex",
+        "title": "Download Report (LaTeX)",
+        "category": "Epidbot",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "epidbot.downloadReportLatexZip",
+        "title": "Download Report (LaTeX ZIP)",
+        "category": "Epidbot",
+        "icon": "$(file-zip)"
       },
       {
         "command": "epidbot.downloadPlotCode",
@@ -135,6 +147,16 @@
           "command": "epidbot.downloadReport",
           "when": "view == epidbot.reports && viewItem == reportItem",
           "group": "inline"
+        },
+        {
+          "command": "epidbot.downloadReportLatex",
+          "when": "view == epidbot.reports && viewItem == reportItem",
+          "group": "context@1"
+        },
+        {
+          "command": "epidbot.downloadReportLatexZip",
+          "when": "view == epidbot.reports && viewItem == reportItem",
+          "group": "context@2"
         },
         {
           "command": "epidbot.downloadPlotCode",

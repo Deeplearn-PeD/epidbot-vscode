@@ -73,6 +73,18 @@ class EpidbotClient {
         });
         return data;
     }
+    async downloadReportLatex(id) {
+        const { data } = await this.client.get(`/reports/${id}/latex`, {
+            responseType: 'arraybuffer',
+        });
+        return data;
+    }
+    async downloadReportLatexZip(id) {
+        const { data } = await this.client.get(`/reports/${id}/latex-zip`, {
+            responseType: 'arraybuffer',
+        });
+        return data;
+    }
     async listPlots(search) {
         const params = {};
         if (search) {

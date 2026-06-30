@@ -8,6 +8,8 @@ import {
   downloadSnippet,
   downloadReport,
   downloadPlotCode,
+  downloadReportLatex,
+  downloadReportLatexZip,
 } from './commands/download';
 import { registerSearchCommand } from './commands/search';
 import {
@@ -200,6 +202,18 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       vscode.commands.registerCommand('epidbot.downloadReport', (report: Report) => {
         downloadReport(client, report.id, report.title);
+      })
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand('epidbot.downloadReportLatex', (report: Report) => {
+        downloadReportLatex(client, report.id, report.title);
+      })
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand('epidbot.downloadReportLatexZip', (report: Report) => {
+        downloadReportLatexZip(client, report.id, report.title);
       })
     );
 

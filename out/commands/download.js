@@ -35,6 +35,8 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.downloadSnippet = downloadSnippet;
 exports.downloadReport = downloadReport;
+exports.downloadReportLatex = downloadReportLatex;
+exports.downloadReportLatexZip = downloadReportLatexZip;
 exports.downloadPlotCode = downloadPlotCode;
 const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
@@ -83,6 +85,52 @@ async function downloadReport(client, reportId, title) {
     catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         vscode.window.showErrorMessage(`Failed to save report: ${message}`);
+    }
+}
+async function downloadReportLatex(client, reportId, title) {
+    if (!client) {
+        vscode.window.showErrorMessage('Epidbot: Not configured. Run "Epidbot: Configure API Key" first.');
+        return;
+    }
+    const defaultName = sanitizeFilename(title) + '.tex';
+    const uri = await vscode.window.showSaveDialog({
+        defaultUri: vscode.Uri.file(path.join(getDefaultDownloadDir(), defaultName)),
+        filters: { 'LaTeX': ['tex'] },
+    });
+    if (!uri) {
+        return;
+    }
+    try {
+        const data = await client.downloadReportLatex(reportId);
+        await vscode.workspace.fs.writeFile(uri, new Uint8Array(data));
+        vscode.window.showInformationMessage(`LaTeX saved to ${uri.fsPath}`);
+    }
+    catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        vscode.window.showErrorMessage(`Failed to save LaTeX: ${message}`);
+    }
+}
+async function downloadReportLatexZip(client, reportId, title) {
+    if (!client) {
+        vscode.window.showErrorMessage('Epidbot: Not configured. Run "Epidbot: Configure API Key" first.');
+        return;
+    }
+    const defaultName = sanitizeFilename(title) + '.zip';
+    const uri = await vscode.window.showSaveDialog({
+        defaultUri: vscode.Uri.file(path.join(getDefaultDownloadDir(), defaultName)),
+        filters: { 'ZIP Archive': ['zip'] },
+    });
+    if (!uri) {
+        return;
+    }
+    try {
+        const data = await client.downloadReportLatexZip(reportId);
+        await vscode.workspace.fs.writeFile(uri, new Uint8Array(data));
+        vscode.window.showInformationMessage(`LaTeX bundle saved to ${uri.fsPath}`);
+    }
+    catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        vscode.window.showErrorMessage(`Failed to save LaTeX bundle: ${message}`);
     }
 }
 async function downloadPlotCode(client, plotId, filename) {
