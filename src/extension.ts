@@ -234,11 +234,18 @@ async function openSnippetInEditor(snippet: SnippetResult): Promise<void> {
     duckdb_sql: 'sql',
   };
   const language = languageMap[snippet.language] || 'plaintext';
-  const doc = await vscode.workspace.openTextDocument({
-    content: snippet.source_code,
-    language,
+  const ext = snippet.language === 'sql' || snippet.language === 'duckdb_sql' ? '.sql' : '.py';
+  const safeTitle = snippet.title.replace(/[/\\:*?"<>|]/g, '_');
+  const uri = vscode.Uri.parse(`untitled:${safeTitle}${ext}`);
+  const doc = await vscode.workspace.openTextDocument(uri);
+  const editor = await vscode.window.showTextDocument(doc, { preview: false });
+  await editor.edit((editBuilder) => {
+    const lastLine = doc.lineCount - 1;
+    const lastChar = doc.lineAt(lastLine).text.length;
+    editBuilder.delete(new vscode.Range(0, 0, lastLine, lastChar));
+    editBuilder.insert(new vscode.Position(0, 0), snippet.source_code);
   });
-  await vscode.window.showTextDocument(doc, { preview: false });
+  await vscode.languages.setTextDocumentLanguage(doc, language);
 }
 
 function updateStatusBar(): void {
