@@ -95,7 +95,7 @@ class EpidbotClient {
     }
     async downloadReportLatex(id) {
         const { data } = await this.client.get(`/reports/${id}/latex`, {
-            responseType: 'arraybuffer',
+            responseType: 'text',
         });
         return data;
     }

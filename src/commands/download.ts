@@ -76,11 +76,13 @@ export async function downloadReportLatex(client: EpidbotClient | null, reportId
   }
 
   try {
-    const data = await client.downloadReportLatex(reportId);
-    await vscode.workspace.fs.writeFile(uri, new Uint8Array(data));
+    const content = await client.downloadReportLatex(reportId);
+    console.log('[Epidbot] LaTeX download: got', content.length, 'chars');
+    await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf-8'));
     vscode.window.showInformationMessage(`LaTeX saved to ${uri.fsPath}`);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[Epidbot] LaTeX download failed:', message);
     vscode.window.showErrorMessage(`Failed to save LaTeX: ${message}`);
   }
 }
@@ -104,10 +106,12 @@ export async function downloadReportLatexZip(client: EpidbotClient | null, repor
 
   try {
     const data = await client.downloadReportLatexZip(reportId);
-    await vscode.workspace.fs.writeFile(uri, new Uint8Array(data));
+    console.log('[Epidbot] LaTeX ZIP download: got', data.byteLength, 'bytes');
+    await vscode.workspace.fs.writeFile(uri, Buffer.from(data));
     vscode.window.showInformationMessage(`LaTeX bundle saved to ${uri.fsPath}`);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[Epidbot] LaTeX ZIP download failed:', message);
     vscode.window.showErrorMessage(`Failed to save LaTeX bundle: ${message}`);
   }
 }

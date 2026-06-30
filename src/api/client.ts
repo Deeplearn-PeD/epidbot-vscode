@@ -99,9 +99,9 @@ export class EpidbotClient {
     return data;
   }
 
-  async downloadReportLatex(id: number): Promise<ArrayBuffer> {
-    const { data } = await this.client.get<ArrayBuffer>(`/reports/${id}/latex`, {
-      responseType: 'arraybuffer',
+  async downloadReportLatex(id: number): Promise<string> {
+    const { data } = await this.client.get<string>(`/reports/${id}/latex`, {
+      responseType: 'text',
     });
     return data;
   }
