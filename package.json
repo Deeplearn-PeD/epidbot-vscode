@@ -2,7 +2,7 @@
   "name": "epidbot-vscode",
   "displayName": "Epidbot",
   "description": "Browse and download EpidBot code snippets, reports, and plots from VS Code",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "DeepLearn",
   "license": "MIT",
   "repository": {
