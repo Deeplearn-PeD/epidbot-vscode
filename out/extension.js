@@ -50,90 +50,105 @@ let snippetsProvider;
 let reportsProvider;
 let plotsProvider;
 function activate(context) {
-    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    statusBarItem.command = 'epidbot.configure';
-    context.subscriptions.push(statusBarItem);
-    snippetsProvider = new SnippetsProvider_1.SnippetsProvider();
-    reportsProvider = new ReportsProvider_1.ReportsProvider();
-    plotsProvider = new PlotsProvider_1.PlotsProvider();
-    vscode.window.createTreeView('epidbot.snippets', {
-        treeDataProvider: snippetsProvider,
-        showCollapseAll: true,
-    });
-    vscode.window.createTreeView('epidbot.reports', {
-        treeDataProvider: reportsProvider,
-        showCollapseAll: false,
-    });
-    vscode.window.createTreeView('epidbot.plots', {
-        treeDataProvider: plotsProvider,
-        showCollapseAll: false,
-    });
-    context.subscriptions.push((0, configure_1.registerConfigureCommand)(context, (newClient) => {
-        client = newClient;
-        snippetsProvider.setClient(client);
-        reportsProvider.setClient(client);
-        plotsProvider.setClient(client);
-        updateStatusBar();
-    }));
-    context.subscriptions.push((0, search_1.registerSearchCommand)(() => client));
-    context.subscriptions.push((0, sessionFilter_1.registerSelectSessionCommand)(() => client, () => {
-        snippetsProvider.setSessionId((0, sessionFilter_1.getSelectedSessionId)());
-        reportsProvider.refresh();
-        plotsProvider.refresh();
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('epidbot.refresh', () => {
-        snippetsProvider.refresh();
-        reportsProvider.refresh();
-        plotsProvider.refresh();
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('epidbot.openSnippet', (snippet) => {
-        openSnippetInEditor(snippet);
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('epidbot.openReport', async (report) => {
-        if (!client) {
-            vscode.window.showErrorMessage('Epidbot: Not configured.');
-            return;
-        }
-        try {
-            const full = await client.getReport(report.id);
-            const doc = await vscode.workspace.openTextDocument({
-                content: full.content,
-                language: 'markdown',
-            });
-            await vscode.window.showTextDocument(doc, { preview: false });
-            await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : 'Unknown error';
-            vscode.window.showErrorMessage(`Failed to open report: ${message}`);
-        }
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('epidbot.openPlot', (plot) => {
-        if (!client) {
-            vscode.window.showErrorMessage('Epidbot: Not configured.');
-            return;
-        }
-        DetailPanel_1.PlotDetailPanel.createOrShow(client, plot);
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadSnippet', (snippet) => {
-        (0, download_1.downloadSnippet)(client, snippet);
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadReport', (report) => {
-        (0, download_1.downloadReport)(client, report.id, report.title);
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadPlot', (plot) => {
-        (0, download_1.downloadPlot)(client, plot.id, plot.filename);
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadPlotCode', (plot) => {
-        (0, download_1.downloadPlotCode)(client, plot.id, plot.filename);
-    }));
-    (0, configure_1.initializeClient)(context).then((c) => {
-        client = c;
-        snippetsProvider.setClient(client);
-        reportsProvider.setClient(client);
-        plotsProvider.setClient(client);
-        updateStatusBar();
-    });
+    console.log('[Epidbot] activate() started');
+    try {
+        statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+        statusBarItem.command = 'epidbot.configure';
+        context.subscriptions.push(statusBarItem);
+        console.log('[Epidbot] status bar item created');
+        snippetsProvider = new SnippetsProvider_1.SnippetsProvider();
+        reportsProvider = new ReportsProvider_1.ReportsProvider();
+        plotsProvider = new PlotsProvider_1.PlotsProvider();
+        console.log('[Epidbot] providers created');
+        vscode.window.createTreeView('epidbot.snippets', {
+            treeDataProvider: snippetsProvider,
+            showCollapseAll: true,
+        });
+        vscode.window.createTreeView('epidbot.reports', {
+            treeDataProvider: reportsProvider,
+            showCollapseAll: false,
+        });
+        vscode.window.createTreeView('epidbot.plots', {
+            treeDataProvider: plotsProvider,
+            showCollapseAll: false,
+        });
+        console.log('[Epidbot] tree views created');
+        context.subscriptions.push((0, configure_1.registerConfigureCommand)(context, (newClient) => {
+            client = newClient;
+            snippetsProvider.setClient(client);
+            reportsProvider.setClient(client);
+            plotsProvider.setClient(client);
+            updateStatusBar();
+        }));
+        context.subscriptions.push((0, search_1.registerSearchCommand)(() => client));
+        context.subscriptions.push((0, sessionFilter_1.registerSelectSessionCommand)(() => client, () => {
+            snippetsProvider.setSessionId((0, sessionFilter_1.getSelectedSessionId)());
+            reportsProvider.refresh();
+            plotsProvider.refresh();
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.refresh', () => {
+            snippetsProvider.refresh();
+            reportsProvider.refresh();
+            plotsProvider.refresh();
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.openSnippet', (snippet) => {
+            openSnippetInEditor(snippet);
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.openReport', async (report) => {
+            if (!client) {
+                vscode.window.showErrorMessage('Epidbot: Not configured.');
+                return;
+            }
+            try {
+                const full = await client.getReport(report.id);
+                const doc = await vscode.workspace.openTextDocument({
+                    content: full.content,
+                    language: 'markdown',
+                });
+                await vscode.window.showTextDocument(doc, { preview: false });
+                await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
+            }
+            catch (err) {
+                const message = err instanceof Error ? err.message : 'Unknown error';
+                vscode.window.showErrorMessage(`Failed to open report: ${message}`);
+            }
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.openPlot', (plot) => {
+            if (!client) {
+                vscode.window.showErrorMessage('Epidbot: Not configured.');
+                return;
+            }
+            DetailPanel_1.PlotDetailPanel.createOrShow(client, plot);
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadSnippet', (snippet) => {
+            (0, download_1.downloadSnippet)(client, snippet);
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadReport', (report) => {
+            (0, download_1.downloadReport)(client, report.id, report.title);
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadPlot', (plot) => {
+            (0, download_1.downloadPlot)(client, plot.id, plot.filename);
+        }));
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadPlotCode', (plot) => {
+            (0, download_1.downloadPlotCode)(client, plot.id, plot.filename);
+        }));
+        (0, configure_1.initializeClient)(context).then((c) => {
+            client = c;
+            snippetsProvider.setClient(client);
+            reportsProvider.setClient(client);
+            plotsProvider.setClient(client);
+            updateStatusBar();
+            console.log('[Epidbot] client initialized:', c ? 'connected' : 'no API key configured');
+        }).catch((err) => {
+            console.error('[Epidbot] client init error:', err);
+        });
+        console.log('[Epidbot] activate() completed');
+        vscode.window.showInformationMessage('Epidbot extension activated. Look for the cross icon in the Activity Bar.');
+    }
+    catch (err) {
+        console.error('[Epidbot] activate() failed:', err);
+        vscode.window.showErrorMessage(`Epidbot failed to start: ${err instanceof Error ? err.message : String(err)}`);
+    }
 }
 async function openSnippetInEditor(snippet) {
     const languageMap = {

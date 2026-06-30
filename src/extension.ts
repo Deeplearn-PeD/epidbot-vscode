@@ -2,9 +2,7 @@ import * as vscode from 'vscode';
 import { EpidbotClient } from './api/client';
 import { SnippetsProvider } from './providers/SnippetsProvider';
 import { ReportsProvider } from './providers/ReportsProvider';
-import { PlotsProvider, PlotTreeItem } from './providers/PlotsProvider';
-import { ReportTreeItem } from './providers/ReportsProvider';
-import { SnippetTreeItem } from './providers/SnippetsProvider';
+import { PlotsProvider } from './providers/PlotsProvider';
 import { PlotDetailPanel } from './views/DetailPanel';
 import { registerConfigureCommand, initializeClient } from './commands/configure';
 import {
@@ -29,13 +27,18 @@ let reportsProvider: ReportsProvider;
 let plotsProvider: PlotsProvider;
 
 export function activate(context: vscode.ExtensionContext): void {
-  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-  statusBarItem.command = 'epidbot.configure';
-  context.subscriptions.push(statusBarItem);
+  console.log('[Epidbot] activate() started');
+
+  try {
+    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    statusBarItem.command = 'epidbot.configure';
+    context.subscriptions.push(statusBarItem);
+    console.log('[Epidbot] status bar item created');
 
   snippetsProvider = new SnippetsProvider();
   reportsProvider = new ReportsProvider();
   plotsProvider = new PlotsProvider();
+  console.log('[Epidbot] providers created');
 
   vscode.window.createTreeView('epidbot.snippets', {
     treeDataProvider: snippetsProvider,
@@ -51,6 +54,7 @@ export function activate(context: vscode.ExtensionContext): void {
     treeDataProvider: plotsProvider,
     showCollapseAll: false,
   });
+  console.log('[Epidbot] tree views created');
 
   context.subscriptions.push(
     registerConfigureCommand(context, (newClient) => {
@@ -152,7 +156,18 @@ export function activate(context: vscode.ExtensionContext): void {
     reportsProvider.setClient(client);
     plotsProvider.setClient(client);
     updateStatusBar();
+    console.log('[Epidbot] client initialized:', c ? 'connected' : 'no API key configured');
+  }).catch((err) => {
+    console.error('[Epidbot] client init error:', err);
   });
+
+  console.log('[Epidbot] activate() completed');
+  vscode.window.showInformationMessage('Epidbot extension activated. Look for the cross icon in the Activity Bar.');
+
+  } catch (err) {
+    console.error('[Epidbot] activate() failed:', err);
+    vscode.window.showErrorMessage(`Epidbot failed to start: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
 async function openSnippetInEditor(snippet: SnippetResult): Promise<void> {
