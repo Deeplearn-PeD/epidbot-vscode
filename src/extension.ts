@@ -206,13 +206,15 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand('epidbot.downloadReportLatex', (report: Report) => {
+      vscode.commands.registerCommand('epidbot.downloadReportLatex', (arg: Report | { report: Report }) => {
+        const report = (arg as { report: Report }).report ?? (arg as Report);
         downloadReportLatex(client, report.id, report.title);
       })
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand('epidbot.downloadReportLatexZip', (report: Report) => {
+      vscode.commands.registerCommand('epidbot.downloadReportLatexZip', (arg: Report | { report: Report }) => {
+        const report = (arg as { report: Report }).report ?? (arg as Report);
         downloadReportLatexZip(client, report.id, report.title);
       })
     );

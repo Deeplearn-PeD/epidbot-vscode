@@ -188,10 +188,12 @@ function activate(context) {
         context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadReport', (report) => {
             (0, download_1.downloadReport)(client, report.id, report.title);
         }));
-        context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadReportLatex', (report) => {
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadReportLatex', (arg) => {
+            const report = arg.report ?? arg;
             (0, download_1.downloadReportLatex)(client, report.id, report.title);
         }));
-        context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadReportLatexZip', (report) => {
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadReportLatexZip', (arg) => {
+            const report = arg.report ?? arg;
             (0, download_1.downloadReportLatexZip)(client, report.id, report.title);
         }));
         context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadPlotCode', (plot) => {
