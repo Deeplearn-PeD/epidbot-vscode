@@ -58,6 +58,11 @@
         "category": "Epidbot"
       },
       {
+        "command": "epidbot.searchSnippetsPrompt",
+        "title": "Search Code Snippets",
+        "category": "Epidbot"
+      },
+      {
         "command": "epidbot.refresh",
         "title": "Refresh All",
         "category": "Epidbot",

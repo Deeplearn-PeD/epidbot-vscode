@@ -1,19 +1,26 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import * as vscode from 'vscode';
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
 import {
   SearchResponse,
   Report,
   Plot,
   Session,
   UserProfile,
+  AuthTokens,
 } from '../types/epidbot';
 
 export class EpidbotClient {
   private client: AxiosInstance;
+  private serverUrl: string;
+  private apiKey: string;
+  private bearerToken: string | null = null;
 
-  constructor(serverUrl: string, apiKey: string) {
+  constructor(serverUrl: string, apiKey: string, bearerToken?: string | null) {
+    this.serverUrl = serverUrl.replace(/\/+$/, '');
+    this.apiKey = apiKey;
+    this.bearerToken = bearerToken || null;
+
     this.client = axios.create({
-      baseURL: `${serverUrl.replace(/\/+$/, '')}/api/v1`,
+      baseURL: `${this.serverUrl}/api/v1`,
       headers: {
         'X-API-Key': apiKey,
         'Content-Type': 'application/json',
@@ -48,6 +55,43 @@ export class EpidbotClient {
     );
   }
 
+  setBearerToken(token: string | null): void {
+    this.bearerToken = token;
+  }
+
+  getBearerToken(): string | null {
+    return this.bearerToken;
+  }
+
+  async login(username: string, password: string): Promise<AuthTokens> {
+    const resp = await axios.post<AuthTokens>(
+      `${this.serverUrl}/api/v1/auth/login`,
+      { username, password },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+    );
+    this.bearerToken = resp.data.access_token;
+    return resp.data;
+  }
+
+  async refreshAccessToken(refreshToken: string): Promise<AuthTokens> {
+    const resp = await axios.post<AuthTokens>(
+      `${this.serverUrl}/api/v1/auth/refresh`,
+      { refresh_token: refreshToken },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+    );
+    this.bearerToken = resp.data.access_token;
+    return resp.data;
+  }
+
+  private bearerConfig(): AxiosRequestConfig {
+    return {
+      headers: {
+        Authorization: `Bearer ${this.bearerToken}`,
+        'X-API-Key': undefined,
+      },
+    };
+  }
+
   async getProfile(): Promise<UserProfile> {
     const { data } = await this.client.get<UserProfile>('/auth/me');
     return data;
@@ -58,21 +102,16 @@ export class EpidbotClient {
     return data;
   }
 
-  async searchSnippets(
-    query?: string,
-    sessionId?: number | null
-  ): Promise<SearchResponse> {
-    const body: Record<string, unknown> = {
-      source_type: 'snippet',
-    };
-    if (query) {
-      body.query = query;
-    }
+  async searchSnippets(query: string, sessionId?: number | null): Promise<SearchResponse> {
+    const body: Record<string, unknown> = { query };
     if (sessionId) {
       body.session_id = sessionId;
     }
     const { data } = await this.client.post<SearchResponse>('/search', body);
-    console.log('[Epidbot] searchSnippets response:', JSON.stringify({ total: data.total, resultsLen: data.results.length, firstResultType: data.results[0]?.source_type }));
+    console.log('[Epidbot] searchSnippets response:', JSON.stringify({
+      total: data.total,
+      resultsLen: data.results.length,
+    }));
     return data;
   }
 
@@ -113,9 +152,13 @@ export class EpidbotClient {
   }
 
   async getPlotImage(id: number): Promise<ArrayBuffer> {
-    const { data } = await this.client.get<ArrayBuffer>(`/plots/${id}/file`, {
+    const config: AxiosRequestConfig = {
       responseType: 'arraybuffer',
-    });
+    };
+    if (this.bearerToken) {
+      Object.assign(config, this.bearerConfig());
+    }
+    const { data } = await this.client.get<ArrayBuffer>(`/plots/${id}/file`, config);
     return data;
   }
 

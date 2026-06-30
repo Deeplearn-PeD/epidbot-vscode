@@ -35,7 +35,6 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SnippetsProvider = exports.SnippetTreeItem = void 0;
 const vscode = __importStar(require("vscode"));
-const epidbot_1 = require("../types/epidbot");
 class SnippetTreeItem extends vscode.TreeItem {
     snippet;
     constructor(snippet, isChild) {
@@ -76,17 +75,38 @@ class LanguageGroup extends vscode.TreeItem {
         this.description = `${snippets.length} snippet${snippets.length !== 1 ? 's' : ''}`;
     }
 }
+class SearchPromptItem extends vscode.TreeItem {
+    constructor() {
+        super('Search for code snippets...', vscode.TreeItemCollapsibleState.None);
+        this.iconPath = new vscode.ThemeIcon('search');
+        this.command = {
+            command: 'epidbot.searchSnippetsPrompt',
+            title: 'Search Snippets',
+        };
+    }
+}
 class SnippetsProvider {
     _onDidChangeTreeData = new vscode.EventEmitter();
     onDidChangeTreeData = this._onDidChangeTreeData.event;
     client = null;
     sessionId = null;
+    lastQuery = null;
+    lastSnippets = [];
     setClient(client) {
         this.client = client;
+        this.lastQuery = null;
+        this.lastSnippets = [];
         this.refresh();
     }
     setSessionId(sessionId) {
         this.sessionId = sessionId;
+        if (this.lastQuery) {
+            this.refresh();
+        }
+    }
+    setSearchResults(query, snippets) {
+        this.lastQuery = query;
+        this.lastSnippets = snippets;
         this.refresh();
     }
     refresh() {
@@ -103,33 +123,24 @@ class SnippetsProvider {
             return element.snippets.map((s) => new SnippetTreeItem(s, true));
         }
         if (!element) {
-            try {
-                const response = await this.client.searchSnippets(undefined, this.sessionId);
-                console.log('[Epidbot] Search response:', JSON.stringify({ total: response.total, resultCount: response.results.length }));
-                const snippets = response.results.filter(epidbot_1.isSnippetResult);
-                console.log('[Epidbot] Filtered snippets:', snippets.length);
-                if (snippets.length === 0) {
-                    if (response.total > 0) {
-                        return [this.createInfoItem(`Found ${response.total} results but none matched snippet format. Check debug console.`)];
-                    }
-                    return [this.createInfoItem('No code snippets found')];
-                }
-                const byLanguage = new Map();
-                for (const s of snippets) {
-                    const lang = s.language || 'unknown';
-                    if (!byLanguage.has(lang)) {
-                        byLanguage.set(lang, []);
-                    }
-                    byLanguage.get(lang).push(s);
-                }
-                return Array.from(byLanguage.entries())
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([lang, items]) => new LanguageGroup(lang, items));
+            if (!this.lastQuery || this.lastSnippets.length === 0) {
+                return [new SearchPromptItem()];
             }
-            catch (err) {
-                const message = err instanceof Error ? err.message : 'Unknown error';
-                return [this.createErrorItem(message)];
+            const byLanguage = new Map();
+            for (const s of this.lastSnippets) {
+                const lang = s.language || 'unknown';
+                if (!byLanguage.has(lang)) {
+                    byLanguage.set(lang, []);
+                }
+                byLanguage.get(lang).push(s);
             }
+            const groups = Array.from(byLanguage.entries())
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([lang, items]) => new LanguageGroup(lang, items));
+            const header = new vscode.TreeItem(`Results for "${this.lastQuery}" (${this.lastSnippets.length} snippets)`, vscode.TreeItemCollapsibleState.None);
+            header.iconPath = new vscode.ThemeIcon('search');
+            header.contextValue = 'searchHeader';
+            return [header, ...groups];
         }
         return [];
     }
@@ -137,16 +148,6 @@ class SnippetsProvider {
         const item = new vscode.TreeItem(message, vscode.TreeItemCollapsibleState.None);
         item.command = { command, title: 'Configure' };
         item.iconPath = new vscode.ThemeIcon('warning');
-        return item;
-    }
-    createInfoItem(message) {
-        const item = new vscode.TreeItem(message, vscode.TreeItemCollapsibleState.None);
-        item.iconPath = new vscode.ThemeIcon('info');
-        return item;
-    }
-    createErrorItem(message) {
-        const item = new vscode.TreeItem(message, vscode.TreeItemCollapsibleState.None);
-        item.iconPath = new vscode.ThemeIcon('error');
         return item;
     }
 }

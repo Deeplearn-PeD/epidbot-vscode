@@ -16,7 +16,7 @@ import {
   registerSelectSessionCommand,
   getSelectedSessionId,
 } from './commands/sessionFilter';
-import { SnippetResult } from './types/epidbot';
+import { SnippetResult, isSnippetResult } from './types/epidbot';
 import { Report } from './types/epidbot';
 import { Plot } from './types/epidbot';
 
@@ -28,7 +28,6 @@ let plotsProvider: PlotsProvider;
 
 export function activate(context: vscode.ExtensionContext): void {
   console.log('[Epidbot] activate() started');
-  vscode.window.showInformationMessage('Epidbot activated');
 
   try {
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
@@ -88,6 +87,34 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     context.subscriptions.push(
+      vscode.commands.registerCommand('epidbot.searchSnippetsPrompt', async () => {
+        if (!client) {
+          vscode.window.showErrorMessage('Epidbot: Not configured.');
+          return;
+        }
+        const query = await vscode.window.showInputBox({
+          prompt: 'Search code snippets',
+          placeHolder: 'e.g., dengue, import, SIR model, SELECT',
+          ignoreFocusOut: true,
+        });
+        if (!query) {
+          return;
+        }
+        try {
+          const response = await client.searchSnippets(query, getSelectedSessionId());
+          const snippets = response.results.filter(isSnippetResult);
+          if (snippets.length === 0) {
+            vscode.window.showInformationMessage(`No snippets found for "${query}". Try a different term.`);
+          }
+          snippetsProvider.setSearchResults(query, snippets);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Unknown error';
+          vscode.window.showErrorMessage(`Search failed: ${message}`);
+        }
+      })
+    );
+
+    context.subscriptions.push(
       vscode.commands.registerCommand('epidbot.openSnippet', (snippet: SnippetResult) => {
         openSnippetInEditor(snippet);
       })
@@ -101,11 +128,16 @@ export function activate(context: vscode.ExtensionContext): void {
         }
         try {
           const full = await client.getReport(report.id);
-          const doc = await vscode.workspace.openTextDocument({
-            content: full.content,
-            language: 'markdown',
+          const safeTitle = report.title.replace(/[/\\:*?"<>|]/g, '_');
+          const uri = vscode.Uri.parse(`untitled:${safeTitle}.md`);
+          const doc = await vscode.workspace.openTextDocument(uri);
+          const editor = await vscode.window.showTextDocument(doc, { preview: false });
+          await editor.edit((editBuilder) => {
+            const lastLine = doc.lineCount - 1;
+            const lastChar = doc.lineAt(lastLine).text.length;
+            editBuilder.delete(new vscode.Range(0, 0, lastLine, lastChar));
+            editBuilder.insert(new vscode.Position(0, 0), full.content);
           });
-          await vscode.window.showTextDocument(doc, { preview: false });
           await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Unknown error';

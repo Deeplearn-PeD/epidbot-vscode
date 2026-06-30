@@ -44,6 +44,7 @@ const configure_1 = require("./commands/configure");
 const download_1 = require("./commands/download");
 const search_1 = require("./commands/search");
 const sessionFilter_1 = require("./commands/sessionFilter");
+const epidbot_1 = require("./types/epidbot");
 let client = null;
 let statusBarItem;
 let snippetsProvider;
@@ -51,7 +52,6 @@ let reportsProvider;
 let plotsProvider;
 function activate(context) {
     console.log('[Epidbot] activate() started');
-    vscode.window.showInformationMessage('Epidbot activated');
     try {
         statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
         statusBarItem.command = 'epidbot.configure';
@@ -89,6 +89,32 @@ function activate(context) {
             reportsProvider.refresh();
             plotsProvider.refresh();
         }));
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.searchSnippetsPrompt', async () => {
+            if (!client) {
+                vscode.window.showErrorMessage('Epidbot: Not configured.');
+                return;
+            }
+            const query = await vscode.window.showInputBox({
+                prompt: 'Search code snippets',
+                placeHolder: 'e.g., dengue, import, SIR model, SELECT',
+                ignoreFocusOut: true,
+            });
+            if (!query) {
+                return;
+            }
+            try {
+                const response = await client.searchSnippets(query, (0, sessionFilter_1.getSelectedSessionId)());
+                const snippets = response.results.filter(epidbot_1.isSnippetResult);
+                if (snippets.length === 0) {
+                    vscode.window.showInformationMessage(`No snippets found for "${query}". Try a different term.`);
+                }
+                snippetsProvider.setSearchResults(query, snippets);
+            }
+            catch (err) {
+                const message = err instanceof Error ? err.message : 'Unknown error';
+                vscode.window.showErrorMessage(`Search failed: ${message}`);
+            }
+        }));
         context.subscriptions.push(vscode.commands.registerCommand('epidbot.openSnippet', (snippet) => {
             openSnippetInEditor(snippet);
         }));
@@ -99,11 +125,16 @@ function activate(context) {
             }
             try {
                 const full = await client.getReport(report.id);
-                const doc = await vscode.workspace.openTextDocument({
-                    content: full.content,
-                    language: 'markdown',
+                const safeTitle = report.title.replace(/[/\\:*?"<>|]/g, '_');
+                const uri = vscode.Uri.parse(`untitled:${safeTitle}.md`);
+                const doc = await vscode.workspace.openTextDocument(uri);
+                const editor = await vscode.window.showTextDocument(doc, { preview: false });
+                await editor.edit((editBuilder) => {
+                    const lastLine = doc.lineCount - 1;
+                    const lastChar = doc.lineAt(lastLine).text.length;
+                    editBuilder.delete(new vscode.Range(0, 0, lastLine, lastChar));
+                    editBuilder.insert(new vscode.Position(0, 0), full.content);
                 });
-                await vscode.window.showTextDocument(doc, { preview: false });
                 await vscode.commands.executeCommand('markdown.showPreview', doc.uri);
             }
             catch (err) {
