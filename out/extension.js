@@ -51,15 +51,14 @@ let reportsProvider;
 let plotsProvider;
 function activate(context) {
     console.log('[Epidbot] activate() started');
+    vscode.window.showInformationMessage('Epidbot activated');
     try {
         statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
         statusBarItem.command = 'epidbot.configure';
         context.subscriptions.push(statusBarItem);
-        console.log('[Epidbot] status bar item created');
         snippetsProvider = new SnippetsProvider_1.SnippetsProvider();
         reportsProvider = new ReportsProvider_1.ReportsProvider();
         plotsProvider = new PlotsProvider_1.PlotsProvider();
-        console.log('[Epidbot] providers created');
         vscode.window.createTreeView('epidbot.snippets', {
             treeDataProvider: snippetsProvider,
             showCollapseAll: true,
@@ -72,7 +71,6 @@ function activate(context) {
             treeDataProvider: plotsProvider,
             showCollapseAll: false,
         });
-        console.log('[Epidbot] tree views created');
         context.subscriptions.push((0, configure_1.registerConfigureCommand)(context, (newClient) => {
             client = newClient;
             snippetsProvider.setClient(client);
@@ -138,12 +136,11 @@ function activate(context) {
             reportsProvider.setClient(client);
             plotsProvider.setClient(client);
             updateStatusBar();
-            console.log('[Epidbot] client initialized:', c ? 'connected' : 'no API key configured');
+            console.log('[Epidbot] client initialized:', c ? 'connected' : 'no API key');
         }).catch((err) => {
             console.error('[Epidbot] client init error:', err);
         });
         console.log('[Epidbot] activate() completed');
-        vscode.window.showInformationMessage('Epidbot extension activated. Look for the cross icon in the Activity Bar.');
     }
     catch (err) {
         console.error('[Epidbot] activate() failed:', err);

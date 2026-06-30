@@ -23,7 +23,7 @@
         {
           "id": "epidbot",
           "title": "Epidbot",
-          "icon": "icons/epidbot.svg"
+          "icon": "icon.svg"
         }
       ]
     },
@@ -131,11 +131,6 @@
         {
           "command": "epidbot.downloadReport",
           "when": "view == epidbot.reports && viewItem == reportItem",
-          "group": "inline"
-        },
-        {
-          "command": "epidbot.downloadPlot",
-          "when": "view == epidbot.plots && viewItem == plotItem",
           "group": "inline"
         },
         {
