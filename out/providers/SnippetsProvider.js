@@ -105,8 +105,13 @@ class SnippetsProvider {
         if (!element) {
             try {
                 const response = await this.client.searchSnippets(undefined, this.sessionId);
+                console.log('[Epidbot] Search response:', JSON.stringify({ total: response.total, resultCount: response.results.length }));
                 const snippets = response.results.filter(epidbot_1.isSnippetResult);
+                console.log('[Epidbot] Filtered snippets:', snippets.length);
                 if (snippets.length === 0) {
+                    if (response.total > 0) {
+                        return [this.createInfoItem(`Found ${response.total} results but none matched snippet format. Check debug console.`)];
+                    }
                     return [this.createInfoItem('No code snippets found')];
                 }
                 const byLanguage = new Map();

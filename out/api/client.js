@@ -58,6 +58,7 @@ class EpidbotClient {
             body.session_id = sessionId;
         }
         const { data } = await this.client.post('/search', body);
+        console.log('[Epidbot] searchSnippets response:', JSON.stringify({ total: data.total, resultsLen: data.results.length, firstResultType: data.results[0]?.source_type }));
         return data;
     }
     async searchAll(query) {

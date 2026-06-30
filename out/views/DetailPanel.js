@@ -64,6 +64,7 @@ class PlotDetailPanel {
         this.panel.title = `Plot: ${plot.filename}`;
         try {
             const imageData = await client.getPlotImage(plot.id);
+            console.log('[Epidbot] Plot image loaded:', plot.id, 'size:', imageData.byteLength);
             const base64 = Buffer.from(imageData).toString('base64');
             const mimeType = plot.mime_type || 'image/png';
             let codeHtml = '';
@@ -87,6 +88,7 @@ class PlotDetailPanel {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -152,6 +154,7 @@ class PlotDetailPanel {
         }
         catch (err) {
             const message = err instanceof Error ? err.message : 'Unknown error';
+            console.error('[Epidbot] Failed to load plot image:', plot.id, message);
             this.panel.webview.html = `<!DOCTYPE html>
 <html><body style="padding:20px;color:var(--vscode-errorForeground);">
   <p>Failed to load plot: ${escapeHtml(message)}</p>
