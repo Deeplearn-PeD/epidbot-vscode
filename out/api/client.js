@@ -5,6 +5,26 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EpidbotClient = void 0;
 const axios_1 = __importDefault(require("axios"));
+function extractDetail(data) {
+    if (typeof data === 'string') {
+        try {
+            return JSON.parse(data).detail;
+        }
+        catch {
+            return data;
+        }
+    }
+    if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
+        const text = new TextDecoder().decode(data);
+        try {
+            return JSON.parse(text).detail;
+        }
+        catch {
+            return text;
+        }
+    }
+    return data?.detail;
+}
 class EpidbotClient {
     client;
     constructor(serverUrl, apiKey) {
@@ -19,7 +39,7 @@ class EpidbotClient {
         this.client.interceptors.response.use((response) => response, (error) => {
             if (error.response) {
                 const status = error.response.status;
-                const detail = error.response.data?.detail;
+                const detail = extractDetail(error.response.data);
                 switch (status) {
                     case 401:
                         throw new Error(detail || 'Invalid API key. Run Epidbot: Configure API Key to update it.');

@@ -7,6 +7,17 @@ import {
   UserProfile,
 } from '../types/epidbot';
 
+function extractDetail(data: unknown): string | undefined {
+  if (typeof data === 'string') {
+    try { return (JSON.parse(data) as { detail?: string }).detail; } catch { return data; }
+  }
+  if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
+    const text = new TextDecoder().decode(data as ArrayBuffer);
+    try { return (JSON.parse(text) as { detail?: string }).detail; } catch { return text; }
+  }
+  return (data as { detail?: string })?.detail;
+}
+
 export class EpidbotClient {
   private client: AxiosInstance;
 
@@ -25,7 +36,7 @@ export class EpidbotClient {
       (error: AxiosError) => {
         if (error.response) {
           const status = error.response.status;
-          const detail = (error.response.data as { detail?: string })?.detail;
+          const detail = extractDetail(error.response.data);
           switch (status) {
             case 401:
               throw new Error(detail || 'Invalid API key. Run Epidbot: Configure API Key to update it.');
