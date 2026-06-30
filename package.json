@@ -1,0 +1,181 @@
+{
+  "name": "epidbot-vscode",
+  "displayName": "Epidbot",
+  "description": "Browse and download EpidBot code snippets, reports, and plots from VS Code",
+  "version": "0.1.0",
+  "publisher": "DeepLearn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DeepLearn/epidbot-vscode"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onView:epidbot.snippets",
+    "onView:epidbot.reports",
+    "onView:epidbot.plots"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "epidbot",
+          "title": "Epidbot",
+          "icon": "icons/epidbot.svg"
+        }
+      ]
+    },
+    "views": {
+      "epidbot": [
+        {
+          "id": "epidbot.snippets",
+          "name": "Code Snippets",
+          "icon": "$(code)"
+        },
+        {
+          "id": "epidbot.reports",
+          "name": "Reports",
+          "icon": "$(book)"
+        },
+        {
+          "id": "epidbot.plots",
+          "name": "Plots",
+          "icon": "$(image)"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "epidbot.configure",
+        "title": "Configure API Key",
+        "category": "Epidbot"
+      },
+      {
+        "command": "epidbot.search",
+        "title": "Search Content",
+        "category": "Epidbot"
+      },
+      {
+        "command": "epidbot.refresh",
+        "title": "Refresh All",
+        "category": "Epidbot",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "epidbot.selectSession",
+        "title": "Filter by Session",
+        "category": "Epidbot",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "epidbot.openSnippet",
+        "title": "Open Snippet",
+        "category": "Epidbot"
+      },
+      {
+        "command": "epidbot.openReport",
+        "title": "Open Report",
+        "category": "Epidbot"
+      },
+      {
+        "command": "epidbot.openPlot",
+        "title": "Open Plot Detail",
+        "category": "Epidbot"
+      },
+      {
+        "command": "epidbot.downloadSnippet",
+        "title": "Download Snippet",
+        "category": "Epidbot",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "epidbot.downloadReport",
+        "title": "Download Report",
+        "category": "Epidbot",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "epidbot.downloadPlot",
+        "title": "Download Plot",
+        "category": "Epidbot",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "epidbot.downloadPlotCode",
+        "title": "Download Plot Code",
+        "category": "Epidbot",
+        "icon": "$(cloud-download)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "epidbot.selectSession",
+          "when": "view == epidbot.snippets || view == epidbot.reports || view == epidbot.plots",
+          "group": "navigation"
+        },
+        {
+          "command": "epidbot.refresh",
+          "when": "view == epidbot.snippets || view == epidbot.reports || view == epidbot.plots",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "epidbot.downloadSnippet",
+          "when": "view == epidbot.snippets && viewItem == snippetItem",
+          "group": "inline"
+        },
+        {
+          "command": "epidbot.downloadReport",
+          "when": "view == epidbot.reports && viewItem == reportItem",
+          "group": "inline"
+        },
+        {
+          "command": "epidbot.downloadPlot",
+          "when": "view == epidbot.plots && viewItem == plotItem",
+          "group": "inline"
+        },
+        {
+          "command": "epidbot.downloadPlotCode",
+          "when": "view == epidbot.plots && viewItem == plotItem+code",
+          "group": "inline"
+        },
+        {
+          "command": "epidbot.downloadPlot",
+          "when": "view == epidbot.plots && (viewItem == plotItem || viewItem == plotItem+code)",
+          "group": "inline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Epidbot",
+      "properties": {
+        "epidbot.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:8123",
+          "description": "EpidBot API server URL"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "echo 'No linter configured'",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.0"
+  }
+}
