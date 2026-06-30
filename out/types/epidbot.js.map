@@ -1,1 +1,1 @@
-{"version":3,"file":"epidbot.js","sourceRoot":"","sources":["../../src/types/epidbot.ts"],"names":[],"mappings":";;AA2FA,0CAEC;AAFD,SAAgB,eAAe,CAAC,CAAe;IAC7C,OAAO,CAAC,CAAC,WAAW,KAAK,SAAS,IAAI,CAAC,CAAC,KAAK,KAAK,SAAS,IAAI,CAAC,CAAC,WAAW,KAAK,SAAS,CAAC;AAC7F,CAAC"}
+{"version":3,"file":"epidbot.js","sourceRoot":"","sources":["../../src/types/epidbot.ts"],"names":[],"mappings":";;AAqFA,0CAEC;AAFD,SAAgB,eAAe,CAAC,CAAe;IAC7C,OAAO,CAAC,CAAC,WAAW,KAAK,SAAS,IAAI,CAAC,CAAC,KAAK,KAAK,SAAS,IAAI,CAAC,CAAC,WAAW,KAAK,SAAS,CAAC;AAC7F,CAAC"}

@@ -7,15 +7,9 @@ exports.EpidbotClient = void 0;
 const axios_1 = __importDefault(require("axios"));
 class EpidbotClient {
     client;
-    serverUrl;
-    apiKey;
-    bearerToken = null;
-    constructor(serverUrl, apiKey, bearerToken) {
-        this.serverUrl = serverUrl.replace(/\/+$/, '');
-        this.apiKey = apiKey;
-        this.bearerToken = bearerToken || null;
+    constructor(serverUrl, apiKey) {
         this.client = axios_1.default.create({
-            baseURL: `${this.serverUrl}/api/v1`,
+            baseURL: `${serverUrl.replace(/\/+$/, '')}/api/v1`,
             headers: {
                 'X-API-Key': apiKey,
                 'Content-Type': 'application/json',
@@ -45,30 +39,6 @@ class EpidbotClient {
             throw new Error(`Network error: ${error.message}`);
         });
     }
-    setBearerToken(token) {
-        this.bearerToken = token;
-    }
-    getBearerToken() {
-        return this.bearerToken;
-    }
-    async login(username, password) {
-        const resp = await axios_1.default.post(`${this.serverUrl}/api/v1/auth/login`, { username, password }, { headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
-        this.bearerToken = resp.data.access_token;
-        return resp.data;
-    }
-    async refreshAccessToken(refreshToken) {
-        const resp = await axios_1.default.post(`${this.serverUrl}/api/v1/auth/refresh`, { refresh_token: refreshToken }, { headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
-        this.bearerToken = resp.data.access_token;
-        return resp.data;
-    }
-    bearerConfig() {
-        return {
-            headers: {
-                Authorization: `Bearer ${this.bearerToken}`,
-                'X-API-Key': undefined,
-            },
-        };
-    }
     async getProfile() {
         const { data } = await this.client.get('/auth/me');
         return data;
@@ -83,10 +53,6 @@ class EpidbotClient {
             body.session_id = sessionId;
         }
         const { data } = await this.client.post('/search', body);
-        console.log('[Epidbot] searchSnippets response:', JSON.stringify({
-            total: data.total,
-            resultsLen: data.results.length,
-        }));
         return data;
     }
     async searchAll(query) {
@@ -117,16 +83,6 @@ class EpidbotClient {
     }
     async getPlot(id) {
         const { data } = await this.client.get(`/plots/${id}`);
-        return data;
-    }
-    async getPlotImage(id) {
-        const config = {
-            responseType: 'arraybuffer',
-        };
-        if (this.bearerToken) {
-            Object.assign(config, this.bearerConfig());
-        }
-        const { data } = await this.client.get(`/plots/${id}/file`, config);
         return data;
     }
     async getPlotSnippet(id) {

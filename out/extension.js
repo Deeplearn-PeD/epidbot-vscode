@@ -39,7 +39,6 @@ const vscode = __importStar(require("vscode"));
 const SnippetsProvider_1 = require("./providers/SnippetsProvider");
 const ReportsProvider_1 = require("./providers/ReportsProvider");
 const PlotsProvider_1 = require("./providers/PlotsProvider");
-const DetailPanel_1 = require("./views/DetailPanel");
 const configure_1 = require("./commands/configure");
 const download_1 = require("./commands/download");
 const search_1 = require("./commands/search");
@@ -142,21 +141,26 @@ function activate(context) {
                 vscode.window.showErrorMessage(`Failed to open report: ${message}`);
             }
         }));
-        context.subscriptions.push(vscode.commands.registerCommand('epidbot.openPlot', (plot) => {
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.openPlot', async (plot) => {
             if (!client) {
                 vscode.window.showErrorMessage('Epidbot: Not configured.');
                 return;
             }
-            DetailPanel_1.PlotDetailPanel.createOrShow(client, plot);
+            if (!plot.code_snippet || !plot.code_snippet.trim()) {
+                vscode.window.showInformationMessage(`No code snippet available for "${plot.filename}".`);
+                return;
+            }
+            const doc = await vscode.workspace.openTextDocument({
+                content: plot.code_snippet,
+                language: 'python',
+            });
+            await vscode.window.showTextDocument(doc, { preview: false });
         }));
         context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadSnippet', (snippet) => {
             (0, download_1.downloadSnippet)(client, snippet);
         }));
         context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadReport', (report) => {
             (0, download_1.downloadReport)(client, report.id, report.title);
-        }));
-        context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadPlot', (plot) => {
-            (0, download_1.downloadPlot)(client, plot.id, plot.filename);
         }));
         context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadPlotCode', (plot) => {
             (0, download_1.downloadPlotCode)(client, plot.id, plot.filename);

@@ -83,12 +83,6 @@ export interface UserProfile {
   is_api_enabled: boolean;
 }
 
-export interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-}
-
 export function isSnippetResult(r: SearchResult): r is SnippetResult {
   return r.source_type === 'snippet' && r.title !== undefined && r.source_code !== undefined;
 }

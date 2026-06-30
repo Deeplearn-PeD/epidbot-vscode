@@ -86,7 +86,7 @@
       },
       {
         "command": "epidbot.openPlot",
-        "title": "Open Plot Detail",
+        "title": "Open Plot Code",
         "category": "Epidbot"
       },
       {
@@ -98,12 +98,6 @@
       {
         "command": "epidbot.downloadReport",
         "title": "Download Report",
-        "category": "Epidbot",
-        "icon": "$(cloud-download)"
-      },
-      {
-        "command": "epidbot.downloadPlot",
-        "title": "Download Plot",
         "category": "Epidbot",
         "icon": "$(cloud-download)"
       },
@@ -141,11 +135,6 @@
         {
           "command": "epidbot.downloadPlotCode",
           "when": "view == epidbot.plots && viewItem == plotItem+code",
-          "group": "inline"
-        },
-        {
-          "command": "epidbot.downloadPlot",
-          "when": "view == epidbot.plots && (viewItem == plotItem || viewItem == plotItem+code)",
           "group": "inline"
         }
       ]

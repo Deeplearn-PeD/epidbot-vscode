@@ -38,8 +38,6 @@ exports.initializeClient = initializeClient;
 const vscode = __importStar(require("vscode"));
 const client_1 = require("../api/client");
 const SECRET_API_KEY = 'epidbot.apiKey';
-const SECRET_ACCESS_TOKEN = 'epidbot.accessToken';
-const SECRET_REFRESH_TOKEN = 'epidbot.refreshToken';
 function registerConfigureCommand(context, onConfigured) {
     return vscode.commands.registerCommand('epidbot.configure', async () => {
         const serverUrl = await vscode.window.showInputBox({
@@ -62,54 +60,9 @@ function registerConfigureCommand(context, onConfigured) {
         }
         await vscode.workspace.getConfiguration('epidbot').update('serverUrl', serverUrl, vscode.ConfigurationTarget.Global);
         await context.secrets.store(SECRET_API_KEY, apiKey);
-        const wantCredentials = await vscode.window.showQuickPick(['Yes', 'No'], {
-            placeHolder: 'Add username/password for plot image access? (Recommended — required for plot images)',
-            ignoreFocusOut: true,
-        });
-        let accessToken = null;
-        let refreshToken = null;
-        if (wantCredentials === 'Yes') {
-            const username = await vscode.window.showInputBox({
-                prompt: 'EpidBot username',
-                placeHolder: 'your_username',
-                ignoreFocusOut: true,
-            });
-            if (!username) {
-                vscode.window.showWarningMessage('Epidbot: Skipping login. Plot images will not load.');
-            }
-            else {
-                const password = await vscode.window.showInputBox({
-                    prompt: 'EpidBot password',
-                    password: true,
-                    ignoreFocusOut: true,
-                });
-                if (!password) {
-                    vscode.window.showWarningMessage('Epidbot: Skipping login. Plot images will not load.');
-                }
-                else {
-                    try {
-                        const tempClient = new client_1.EpidbotClient(serverUrl, apiKey);
-                        const tokens = await tempClient.login(username, password);
-                        accessToken = tokens.access_token;
-                        refreshToken = tokens.refresh_token;
-                        await context.secrets.store(SECRET_ACCESS_TOKEN, accessToken);
-                        await context.secrets.store(SECRET_REFRESH_TOKEN, refreshToken);
-                        vscode.window.showInformationMessage('Epidbot: Logged in successfully.');
-                    }
-                    catch (err) {
-                        const message = err instanceof Error ? err.message : 'Unknown error';
-                        vscode.window.showErrorMessage(`Epidbot login failed: ${message}. Plot images will not load.`);
-                    }
-                }
-            }
-        }
-        else {
-            await context.secrets.delete(SECRET_ACCESS_TOKEN);
-            await context.secrets.delete(SECRET_REFRESH_TOKEN);
-        }
         vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'Validating API key...' }, async () => {
             try {
-                const client = new client_1.EpidbotClient(serverUrl, apiKey, accessToken);
+                const client = new client_1.EpidbotClient(serverUrl, apiKey);
                 const profile = await client.getProfile();
                 vscode.window.showInformationMessage(`Epidbot: Connected as ${profile.username}${profile.email ? ` (${profile.email})` : ''}`);
                 onConfigured(client);
@@ -128,30 +81,6 @@ async function initializeClient(context) {
         return null;
     }
     const serverUrl = vscode.workspace.getConfiguration('epidbot').get('serverUrl') || 'https://epidbot.kwar-ai.com.br';
-    const accessToken = await context.secrets.get(SECRET_ACCESS_TOKEN);
-    const client = new client_1.EpidbotClient(serverUrl, apiKey, accessToken || null);
-    if (accessToken) {
-        try {
-            await client.getProfile();
-        }
-        catch {
-            const refreshTokenStr = await context.secrets.get(SECRET_REFRESH_TOKEN);
-            if (refreshTokenStr) {
-                try {
-                    const tokens = await client.refreshAccessToken(refreshTokenStr);
-                    await context.secrets.store(SECRET_ACCESS_TOKEN, tokens.access_token);
-                    await context.secrets.store(SECRET_REFRESH_TOKEN, tokens.refresh_token);
-                    client.setBearerToken(tokens.access_token);
-                }
-                catch {
-                    client.setBearerToken(null);
-                }
-            }
-            else {
-                client.setBearerToken(null);
-            }
-        }
-    }
-    return client;
+    return new client_1.EpidbotClient(serverUrl, apiKey);
 }
 //# sourceMappingURL=configure.js.map

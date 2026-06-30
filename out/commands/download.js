@@ -35,7 +35,6 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.downloadSnippet = downloadSnippet;
 exports.downloadReport = downloadReport;
-exports.downloadPlot = downloadPlot;
 exports.downloadPlotCode = downloadPlotCode;
 const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
@@ -84,29 +83,6 @@ async function downloadReport(client, reportId, title) {
     catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         vscode.window.showErrorMessage(`Failed to save report: ${message}`);
-    }
-}
-async function downloadPlot(client, plotId, filename) {
-    if (!client) {
-        vscode.window.showErrorMessage('Epidbot: Not configured. Run "Epidbot: Configure API Key" first.');
-        return;
-    }
-    const defaultName = sanitizeFilename(filename);
-    const uri = await vscode.window.showSaveDialog({
-        defaultUri: vscode.Uri.file(path.join(getDefaultDownloadDir(), defaultName)),
-        filters: { 'Images': ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'] },
-    });
-    if (!uri) {
-        return;
-    }
-    try {
-        const data = await client.getPlotImage(plotId);
-        await vscode.workspace.fs.writeFile(uri, new Uint8Array(data));
-        vscode.window.showInformationMessage(`Plot saved to ${uri.fsPath}`);
-    }
-    catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        vscode.window.showErrorMessage(`Failed to save plot: ${message}`);
     }
 }
 async function downloadPlotCode(client, plotId, filename) {

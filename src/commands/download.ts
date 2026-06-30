@@ -58,33 +58,6 @@ export async function downloadReport(client: EpidbotClient | null, reportId: num
   }
 }
 
-export async function downloadPlot(client: EpidbotClient | null, plotId: number, filename: string): Promise<void> {
-  if (!client) {
-    vscode.window.showErrorMessage('Epidbot: Not configured. Run "Epidbot: Configure API Key" first.');
-    return;
-  }
-
-  const defaultName = sanitizeFilename(filename);
-
-  const uri = await vscode.window.showSaveDialog({
-    defaultUri: vscode.Uri.file(path.join(getDefaultDownloadDir(), defaultName)),
-    filters: { 'Images': ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'] },
-  });
-
-  if (!uri) {
-    return;
-  }
-
-  try {
-    const data = await client.getPlotImage(plotId);
-    await vscode.workspace.fs.writeFile(uri, new Uint8Array(data));
-    vscode.window.showInformationMessage(`Plot saved to ${uri.fsPath}`);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    vscode.window.showErrorMessage(`Failed to save plot: ${message}`);
-  }
-}
-
 export async function downloadPlotCode(client: EpidbotClient | null, plotId: number, filename: string): Promise<void> {
   if (!client) {
     vscode.window.showErrorMessage('Epidbot: Not configured. Run "Epidbot: Configure API Key" first.');

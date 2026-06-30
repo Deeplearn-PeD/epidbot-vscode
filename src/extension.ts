@@ -3,12 +3,10 @@ import { EpidbotClient } from './api/client';
 import { SnippetsProvider } from './providers/SnippetsProvider';
 import { ReportsProvider } from './providers/ReportsProvider';
 import { PlotsProvider } from './providers/PlotsProvider';
-import { PlotDetailPanel } from './views/DetailPanel';
 import { registerConfigureCommand, initializeClient } from './commands/configure';
 import {
   downloadSnippet,
   downloadReport,
-  downloadPlot,
   downloadPlotCode,
 } from './commands/download';
 import { registerSearchCommand } from './commands/search';
@@ -147,12 +145,20 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand('epidbot.openPlot', (plot: Plot) => {
+      vscode.commands.registerCommand('epidbot.openPlot', async (plot: Plot) => {
         if (!client) {
           vscode.window.showErrorMessage('Epidbot: Not configured.');
           return;
         }
-        PlotDetailPanel.createOrShow(client, plot);
+        if (!plot.code_snippet || !plot.code_snippet.trim()) {
+          vscode.window.showInformationMessage(`No code snippet available for "${plot.filename}".`);
+          return;
+        }
+        const doc = await vscode.workspace.openTextDocument({
+          content: plot.code_snippet,
+          language: 'python',
+        });
+        await vscode.window.showTextDocument(doc, { preview: false });
       })
     );
 
@@ -165,12 +171,6 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       vscode.commands.registerCommand('epidbot.downloadReport', (report: Report) => {
         downloadReport(client, report.id, report.title);
-      })
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand('epidbot.downloadPlot', (plot: Plot) => {
-        downloadPlot(client, plot.id, plot.filename);
       })
     );
 

@@ -47,7 +47,7 @@ class PlotTreeItem extends vscode.TreeItem {
         this.iconPath = new vscode.ThemeIcon('file-media');
         this.command = {
             command: 'epidbot.openPlot',
-            title: 'Open Plot Detail',
+            title: 'Open Plot Code',
             arguments: [plot],
         };
     }
