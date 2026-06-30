@@ -42,8 +42,8 @@ function registerConfigureCommand(context, onConfigured) {
     return vscode.commands.registerCommand('epidbot.configure', async () => {
         const serverUrl = await vscode.window.showInputBox({
             prompt: 'EpidBot server URL',
-            placeHolder: 'http://localhost:8123',
-            value: vscode.workspace.getConfiguration('epidbot').get('serverUrl') || 'http://localhost:8123',
+            placeHolder: 'https://epidbot.kwar-ai.com.br',
+            value: vscode.workspace.getConfiguration('epidbot').get('serverUrl') || 'https://epidbot.kwar-ai.com.br',
             ignoreFocusOut: true,
         });
         if (!serverUrl) {
@@ -80,7 +80,7 @@ async function initializeClient(context) {
     if (!apiKey) {
         return null;
     }
-    const serverUrl = vscode.workspace.getConfiguration('epidbot').get('serverUrl') || 'http://localhost:8123';
+    const serverUrl = vscode.workspace.getConfiguration('epidbot').get('serverUrl') || 'https://epidbot.kwar-ai.com.br';
     return new client_1.EpidbotClient(serverUrl, apiKey);
 }
 //# sourceMappingURL=configure.js.map

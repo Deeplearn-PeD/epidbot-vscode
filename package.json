@@ -157,7 +157,7 @@
       "properties": {
         "epidbot.serverUrl": {
           "type": "string",
-          "default": "http://localhost:8123",
+          "default": "https://epidbot.kwar-ai.com.br",
           "description": "EpidBot API server URL"
         }
       }
