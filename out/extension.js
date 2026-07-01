@@ -167,7 +167,8 @@ function activate(context) {
                 vscode.window.showErrorMessage(`Failed to open report: ${message}`);
             }
         }));
-        context.subscriptions.push(vscode.commands.registerCommand('epidbot.openPlot', async (plot) => {
+        context.subscriptions.push(vscode.commands.registerCommand('epidbot.openPlot', async (arg) => {
+            const plot = arg.plot ?? arg;
             if (!client) {
                 vscode.window.showErrorMessage('Epidbot: Not configured.');
                 return;
@@ -176,11 +177,17 @@ function activate(context) {
                 vscode.window.showInformationMessage(`No code snippet available for "${plot.filename}".`);
                 return;
             }
-            const doc = await vscode.workspace.openTextDocument({
-                content: plot.code_snippet,
-                language: 'python',
-            });
-            await vscode.window.showTextDocument(doc, { preview: false });
+            try {
+                const doc = await vscode.workspace.openTextDocument({
+                    content: plot.code_snippet,
+                    language: 'python',
+                });
+                await vscode.window.showTextDocument(doc, { preview: false });
+            }
+            catch (err) {
+                const message = err instanceof Error ? err.message : 'Unknown error';
+                vscode.window.showErrorMessage(`Failed to open plot code: ${message}`);
+            }
         }));
         context.subscriptions.push(vscode.commands.registerCommand('epidbot.downloadSnippet', (snippet) => {
             (0, download_1.downloadSnippet)(client, snippet);

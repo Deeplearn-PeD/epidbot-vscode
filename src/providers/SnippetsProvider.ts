@@ -96,6 +96,12 @@ export class SnippetsProvider implements vscode.TreeDataProvider<vscode.TreeItem
     this.refresh();
   }
 
+  clearSearch(): void {
+    this.lastQuery = null;
+    this.lastSnippets = [];
+    this.refresh();
+  }
+
   refresh(): void {
     this._onDidChangeTreeData.fire();
   }
@@ -113,32 +119,43 @@ export class SnippetsProvider implements vscode.TreeDataProvider<vscode.TreeItem
       return element.snippets.map((s) => new SnippetTreeItem(s, true));
     }
 
-    if (!element) {
-      if (!this.lastQuery || this.lastSnippets.length === 0) {
-        return [new SearchPromptItem()];
-      }
-
-      const byLanguage = new Map<string, SnippetResult[]>();
-      for (const s of this.lastSnippets) {
-        const lang = s.language || 'unknown';
-        if (!byLanguage.has(lang)) {
-          byLanguage.set(lang, []);
+      if (!element) {
+        if (!this.lastQuery || this.lastSnippets.length === 0) {
+          return [new SearchPromptItem()];
         }
-        byLanguage.get(lang)!.push(s);
-      }
 
-      const groups = Array.from(byLanguage.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([lang, items]) => new LanguageGroup(lang, items));
+        const byLanguage = new Map<string, SnippetResult[]>();
+        for (const s of this.lastSnippets) {
+          const lang = s.language || 'unknown';
+          if (!byLanguage.has(lang)) {
+            byLanguage.set(lang, []);
+          }
+          byLanguage.get(lang)!.push(s);
+        }
 
-      const header = new vscode.TreeItem(
-        `Results for "${this.lastQuery}" (${this.lastSnippets.length} snippets)`,
-        vscode.TreeItemCollapsibleState.None
-      );
-      header.iconPath = new vscode.ThemeIcon('search');
-      header.contextValue = 'searchHeader';
+        const groups = Array.from(byLanguage.entries())
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([lang, items]) => new LanguageGroup(lang, items));
 
-      return [header, ...groups];
+        const header = new vscode.TreeItem(
+          `Results for "${this.lastQuery}" (${this.lastSnippets.length} snippets)`,
+          vscode.TreeItemCollapsibleState.None
+        );
+        header.iconPath = new vscode.ThemeIcon('search');
+        header.contextValue = 'searchHeader';
+
+        const newSearch = new vscode.TreeItem(
+          'New search...',
+          vscode.TreeItemCollapsibleState.None
+        );
+        newSearch.iconPath = new vscode.ThemeIcon('search-new-editor');
+        newSearch.command = {
+          command: 'epidbot.searchSnippetsPrompt',
+          title: 'New Search',
+        };
+        newSearch.contextValue = 'newSearch';
+
+        return [newSearch, header, ...groups];
     }
 
     return [];

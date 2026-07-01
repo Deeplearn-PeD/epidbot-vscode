@@ -176,7 +176,8 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand('epidbot.openPlot', async (plot: Plot) => {
+      vscode.commands.registerCommand('epidbot.openPlot', async (arg: Plot | { plot: Plot }) => {
+        const plot = (arg as { plot: Plot }).plot ?? (arg as Plot);
         if (!client) {
           vscode.window.showErrorMessage('Epidbot: Not configured.');
           return;
@@ -185,11 +186,16 @@ export function activate(context: vscode.ExtensionContext): void {
           vscode.window.showInformationMessage(`No code snippet available for "${plot.filename}".`);
           return;
         }
-        const doc = await vscode.workspace.openTextDocument({
-          content: plot.code_snippet,
-          language: 'python',
-        });
-        await vscode.window.showTextDocument(doc, { preview: false });
+        try {
+          const doc = await vscode.workspace.openTextDocument({
+            content: plot.code_snippet,
+            language: 'python',
+          });
+          await vscode.window.showTextDocument(doc, { preview: false });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Unknown error';
+          vscode.window.showErrorMessage(`Failed to open plot code: ${message}`);
+        }
       })
     );
 

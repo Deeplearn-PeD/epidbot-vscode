@@ -116,6 +116,11 @@ class SnippetsProvider {
         this.lastSnippets = snippets;
         this.refresh();
     }
+    clearSearch() {
+        this.lastQuery = null;
+        this.lastSnippets = [];
+        this.refresh();
+    }
     refresh() {
         this._onDidChangeTreeData.fire();
     }
@@ -147,7 +152,14 @@ class SnippetsProvider {
             const header = new vscode.TreeItem(`Results for "${this.lastQuery}" (${this.lastSnippets.length} snippets)`, vscode.TreeItemCollapsibleState.None);
             header.iconPath = new vscode.ThemeIcon('search');
             header.contextValue = 'searchHeader';
-            return [header, ...groups];
+            const newSearch = new vscode.TreeItem('New search...', vscode.TreeItemCollapsibleState.None);
+            newSearch.iconPath = new vscode.ThemeIcon('search-new-editor');
+            newSearch.command = {
+                command: 'epidbot.searchSnippetsPrompt',
+                title: 'New Search',
+            };
+            newSearch.contextValue = 'newSearch';
+            return [newSearch, header, ...groups];
         }
         return [];
     }
