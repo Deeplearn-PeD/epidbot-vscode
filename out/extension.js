@@ -66,9 +66,24 @@ function activate(context) {
             treeDataProvider: reportsProvider,
             showCollapseAll: false,
         });
-        vscode.window.createTreeView('epidbot.plots', {
+        const plotTreeView = vscode.window.createTreeView('epidbot.plots', {
             treeDataProvider: plotsProvider,
             showCollapseAll: false,
+        });
+        plotTreeView.onDidChangeSelection((e) => {
+            if (e.selection.length > 0 && e.selection[0] instanceof PlotsProvider_1.PlotTreeItem) {
+                const plot = e.selection[0].plot;
+                if (plot.code_snippet && plot.code_snippet.trim()) {
+                    const doc = vscode.workspace.openTextDocument({
+                        content: plot.code_snippet,
+                        language: 'python',
+                    });
+                    doc.then((d) => vscode.window.showTextDocument(d, { preview: false }));
+                }
+                else {
+                    vscode.window.showInformationMessage(`No code snippet available for "${plot.filename}".`);
+                }
+            }
         });
         context.subscriptions.push((0, configure_1.registerConfigureCommand)(context, (newClient) => {
             client = newClient;
@@ -168,9 +183,9 @@ function activate(context) {
             }
         }));
         context.subscriptions.push(vscode.commands.registerCommand('epidbot.openPlot', async (arg) => {
-            const plot = arg.plot ?? arg;
-            if (!client) {
-                vscode.window.showErrorMessage('Epidbot: Not configured.');
+            const plot = extractPlot(arg);
+            if (!plot) {
+                vscode.window.showErrorMessage('Epidbot: Could not determine which plot to open.');
                 return;
             }
             if (!plot.code_snippet || !plot.code_snippet.trim()) {
@@ -242,6 +257,19 @@ async function openSnippetInEditor(snippet) {
         editBuilder.insert(new vscode.Position(0, 0), snippet.source_code);
     });
     await vscode.languages.setTextDocumentLanguage(doc, language);
+}
+function extractPlot(arg) {
+    if (!arg) {
+        return null;
+    }
+    const obj = arg;
+    if (obj.plot && typeof obj.plot === 'object') {
+        return obj.plot;
+    }
+    if (typeof obj.filename === 'string' && typeof obj.id === 'number') {
+        return obj;
+    }
+    return null;
 }
 function updateStatusBar() {
     if (client) {

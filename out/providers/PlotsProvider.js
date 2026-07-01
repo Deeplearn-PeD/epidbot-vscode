@@ -45,11 +45,6 @@ class PlotTreeItem extends vscode.TreeItem {
         this.tooltip = `${plot.filename}\nSource: ${plot.source}\nSize: ${plot.width}x${plot.height}\nCode snippet: ${hasCode ? 'Yes' : 'No'}`;
         this.contextValue = hasCode ? 'plotItem+code' : 'plotItem';
         this.iconPath = new vscode.ThemeIcon('file-media');
-        this.command = {
-            command: 'epidbot.openPlot',
-            title: 'Open Plot Code',
-            arguments: [plot],
-        };
     }
 }
 exports.PlotTreeItem = PlotTreeItem;

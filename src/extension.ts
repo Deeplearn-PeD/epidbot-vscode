@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { EpidbotClient } from './api/client';
 import { SnippetsProvider } from './providers/SnippetsProvider';
 import { ReportsProvider } from './providers/ReportsProvider';
-import { PlotsProvider } from './providers/PlotsProvider';
+import { PlotsProvider, PlotTreeItem } from './providers/PlotsProvider';
 import { registerConfigureCommand, initializeClient } from './commands/configure';
 import {
   downloadSnippet,
@@ -48,9 +48,24 @@ export function activate(context: vscode.ExtensionContext): void {
       showCollapseAll: false,
     });
 
-    vscode.window.createTreeView('epidbot.plots', {
+    const plotTreeView = vscode.window.createTreeView('epidbot.plots', {
       treeDataProvider: plotsProvider,
       showCollapseAll: false,
+    });
+
+    plotTreeView.onDidChangeSelection((e) => {
+      if (e.selection.length > 0 && e.selection[0] instanceof PlotTreeItem) {
+        const plot = e.selection[0].plot;
+        if (plot.code_snippet && plot.code_snippet.trim()) {
+          const doc = vscode.workspace.openTextDocument({
+            content: plot.code_snippet,
+            language: 'python',
+          });
+          doc.then((d) => vscode.window.showTextDocument(d, { preview: false }));
+        } else {
+          vscode.window.showInformationMessage(`No code snippet available for "${plot.filename}".`);
+        }
+      }
     });
 
     context.subscriptions.push(
@@ -176,10 +191,10 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand('epidbot.openPlot', async (arg: Plot | { plot: Plot }) => {
-        const plot = (arg as { plot: Plot }).plot ?? (arg as Plot);
-        if (!client) {
-          vscode.window.showErrorMessage('Epidbot: Not configured.');
+      vscode.commands.registerCommand('epidbot.openPlot', async (arg?: unknown) => {
+        const plot = extractPlot(arg);
+        if (!plot) {
+          vscode.window.showErrorMessage('Epidbot: Could not determine which plot to open.');
           return;
         }
         if (!plot.code_snippet || !plot.code_snippet.trim()) {
@@ -268,6 +283,18 @@ async function openSnippetInEditor(snippet: SnippetResult): Promise<void> {
     editBuilder.insert(new vscode.Position(0, 0), snippet.source_code);
   });
   await vscode.languages.setTextDocumentLanguage(doc, language);
+}
+
+function extractPlot(arg: unknown): Plot | null {
+  if (!arg) { return null; }
+  const obj = arg as Record<string, unknown>;
+  if (obj.plot && typeof obj.plot === 'object') {
+    return obj.plot as Plot;
+  }
+  if (typeof obj.filename === 'string' && typeof obj.id === 'number') {
+    return obj as unknown as Plot;
+  }
+  return null;
 }
 
 function updateStatusBar(): void {
