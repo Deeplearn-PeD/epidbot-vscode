@@ -1,4 +1,3 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
 import {
   SearchResponse,
   Report,
@@ -7,65 +6,89 @@ import {
   UserProfile,
 } from '../types/epidbot';
 
-function extractDetail(data: unknown): string | undefined {
-  if (typeof data === 'string') {
-    try { return (JSON.parse(data) as { detail?: string }).detail; } catch { return data; }
+async function extractDetail(response: Response): Promise<string | undefined> {
+  try {
+    const text = await response.clone().text();
+    return (JSON.parse(text) as { detail?: string }).detail;
+  } catch {
+    return undefined;
   }
-  if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
-    const text = new TextDecoder().decode(data as ArrayBuffer);
-    try { return (JSON.parse(text) as { detail?: string }).detail; } catch { return text; }
+}
+
+async function epidbotFetch<T>(
+  url: string,
+  options: RequestInit & { apiKey: string; parseAs?: 'json' | 'text' | 'arraybuffer' }
+): Promise<T> {
+  const { apiKey, parseAs, ...fetchOptions } = options;
+
+  const headers = new Headers(fetchOptions.headers);
+  headers.set('X-API-Key', apiKey);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
   }
-  return (data as { detail?: string })?.detail;
+
+  let response: Response;
+  try {
+    response = await fetch(url, { ...fetchOptions, headers });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND') || msg.includes('fetch failed')) {
+      throw new Error('Cannot connect to EpidBot server. Check the server URL in settings.');
+    }
+    throw new Error(`Network error: ${msg}`);
+  }
+
+  if (!response.ok) {
+    const detail = await extractDetail(response);
+    switch (response.status) {
+      case 401:
+        throw new Error(detail || 'Invalid API key. Run Epidbot: Configure API Key to update it.');
+      case 403:
+        throw new Error(detail || 'Access denied. Your account may not have API access enabled.');
+      case 429:
+        throw new Error('Rate limit exceeded. Please wait before making more requests.');
+      case 503:
+        throw new Error('EpidBot server is unavailable. Try again later.');
+      default:
+        throw new Error(detail || `API error (${response.status})`);
+    }
+  }
+
+  const mode = parseAs || 'json';
+  if (mode === 'text') {
+    return (await response.text()) as unknown as T;
+  }
+  if (mode === 'arraybuffer') {
+    return (await response.arrayBuffer()) as unknown as T;
+  }
+  return (await response.json()) as T;
 }
 
 export class EpidbotClient {
-  private client: AxiosInstance;
+  private baseUrl: string;
+  private apiKey: string;
 
   constructor(serverUrl: string, apiKey: string) {
-    this.client = axios.create({
-      baseURL: `${serverUrl.replace(/\/+$/, '')}/api/v1`,
-      headers: {
-        'X-API-Key': apiKey,
-        'Content-Type': 'application/json',
-      },
-      timeout: 30000,
-    });
+    this.baseUrl = `${serverUrl.replace(/\/+$/, '')}/api/v1`;
+    this.apiKey = apiKey;
+  }
 
-    this.client.interceptors.response.use(
-      (response) => response,
-      (error: AxiosError) => {
-        if (error.response) {
-          const status = error.response.status;
-          const detail = extractDetail(error.response.data);
-          switch (status) {
-            case 401:
-              throw new Error(detail || 'Invalid API key. Run Epidbot: Configure API Key to update it.');
-            case 403:
-              throw new Error(detail || 'Access denied. Your account may not have API access enabled.');
-            case 429:
-              throw new Error('Rate limit exceeded. Please wait before making more requests.');
-            case 503:
-              throw new Error('EpidBot server is unavailable. Try again later.');
-            default:
-              throw new Error(detail || `API error (${status}): ${error.message}`);
-          }
-        }
-        if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-          throw new Error(`Cannot connect to EpidBot server. Check the server URL in settings.`);
-        }
-        throw new Error(`Network error: ${error.message}`);
+  private url(path: string, params?: Record<string, string>): string {
+    const u = new URL(`${this.baseUrl}${path}`);
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        u.searchParams.set(k, v);
       }
-    );
+    }
+    return u.toString();
   }
 
   async getProfile(): Promise<UserProfile> {
-    const { data } = await this.client.get<UserProfile>('/auth/me');
-    return data;
+    return epidbotFetch<UserProfile>(this.url('/auth/me'), { apiKey: this.apiKey });
   }
 
   async listSessions(): Promise<Session[]> {
-    const { data } = await this.client.get<Session[]>('/sessions');
-    return data;
+    return epidbotFetch<Session[]>(this.url('/sessions'), { apiKey: this.apiKey });
   }
 
   async searchSnippets(query: string, sessionId?: number | null): Promise<SearchResponse> {
@@ -73,44 +96,48 @@ export class EpidbotClient {
     if (sessionId) {
       body.session_id = sessionId;
     }
-    const { data } = await this.client.post<SearchResponse>('/search', body);
-    return data;
+    return epidbotFetch<SearchResponse>(this.url('/search'), {
+      method: 'POST',
+      body: JSON.stringify(body),
+      apiKey: this.apiKey,
+    });
   }
 
   async searchAll(query: string): Promise<SearchResponse> {
-    const { data } = await this.client.post<SearchResponse>('/search', { query });
-    return data;
+    return epidbotFetch<SearchResponse>(this.url('/search'), {
+      method: 'POST',
+      body: JSON.stringify({ query }),
+      apiKey: this.apiKey,
+    });
   }
 
   async listReports(): Promise<Report[]> {
-    const { data } = await this.client.get<Report[]>('/reports');
-    return data;
+    return epidbotFetch<Report[]>(this.url('/reports'), { apiKey: this.apiKey });
   }
 
   async getReport(id: number): Promise<Report> {
-    const { data } = await this.client.get<Report>(`/reports/${id}`);
-    return data;
+    return epidbotFetch<Report>(this.url(`/reports/${id}`), { apiKey: this.apiKey });
   }
 
   async downloadReportMarkdown(id: number): Promise<string> {
-    const { data } = await this.client.get<string>(`/reports/${id}/download`, {
-      responseType: 'text',
+    return epidbotFetch<string>(this.url(`/reports/${id}/download`), {
+      apiKey: this.apiKey,
+      parseAs: 'text',
     });
-    return data;
   }
 
   async downloadReportLatex(id: number): Promise<string> {
-    const { data } = await this.client.get<string>(`/reports/${id}/latex`, {
-      responseType: 'text',
+    return epidbotFetch<string>(this.url(`/reports/${id}/latex`), {
+      apiKey: this.apiKey,
+      parseAs: 'text',
     });
-    return data;
   }
 
   async downloadReportLatexZip(id: number): Promise<ArrayBuffer> {
-    const { data } = await this.client.get<ArrayBuffer>(`/reports/${id}/latex-zip`, {
-      responseType: 'arraybuffer',
+    return epidbotFetch<ArrayBuffer>(this.url(`/reports/${id}/latex-zip`), {
+      apiKey: this.apiKey,
+      parseAs: 'arraybuffer',
     });
-    return data;
   }
 
   async listPlots(search?: string): Promise<Plot[]> {
@@ -118,19 +145,17 @@ export class EpidbotClient {
     if (search) {
       params.search = search;
     }
-    const { data } = await this.client.get<Plot[]>('/plots/', { params });
-    return data;
+    return epidbotFetch<Plot[]>(this.url('/plots/', params), { apiKey: this.apiKey });
   }
 
   async getPlot(id: number): Promise<Plot> {
-    const { data } = await this.client.get<Plot>(`/plots/${id}`);
-    return data;
+    return epidbotFetch<Plot>(this.url(`/plots/${id}`), { apiKey: this.apiKey });
   }
 
   async getPlotSnippet(id: number): Promise<string> {
-    const { data } = await this.client.get<string>(`/plots/${id}/snippet`, {
-      responseType: 'text',
+    return epidbotFetch<string>(this.url(`/plots/${id}/snippet`), {
+      apiKey: this.apiKey,
+      parseAs: 'text',
     });
-    return data;
   }
 }
