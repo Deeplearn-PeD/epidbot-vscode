@@ -18,7 +18,9 @@
   "activationEvents": [
     "onView:epidbot.snippets",
     "onView:epidbot.reports",
-    "onView:epidbot.plots"
+    "onView:epidbot.plots",
+    "onCommand:epidbot.configure",
+    "onCommand:epidbot.search"
   ],
   "main": "./out/extension.js",
   "contributes": {
