@@ -152,11 +152,6 @@
           "group": "context@1"
         },
         {
-          "command": "epidbot.downloadReportLatexZip",
-          "when": "view == epidbot.reports && viewItem == reportItem",
-          "group": "context@2"
-        },
-        {
           "command": "epidbot.downloadPlotCode",
           "when": "view == epidbot.plots && viewItem == plotItem+code",
           "group": "inline"

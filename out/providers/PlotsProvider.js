@@ -40,10 +40,9 @@ class PlotTreeItem extends vscode.TreeItem {
     constructor(plot) {
         super(plot.filename, vscode.TreeItemCollapsibleState.None);
         this.plot = plot;
-        const hasCode = plot.code_snippet && plot.code_snippet.trim().length > 0;
         this.description = plot.description || plot.source;
-        this.tooltip = `${plot.filename}\nSource: ${plot.source}\nSize: ${plot.width}x${plot.height}\nCode snippet: ${hasCode ? 'Yes' : 'No'}`;
-        this.contextValue = hasCode ? 'plotItem+code' : 'plotItem';
+        this.tooltip = `${plot.filename}\nSource: ${plot.source}\nSize: ${plot.width}x${plot.height}`;
+        this.contextValue = 'plotItem+code';
         this.iconPath = new vscode.ThemeIcon('file-media');
     }
 }
@@ -70,9 +69,10 @@ class PlotsProvider {
             return [this.createPlaceholder('Click the gear icon to configure your API key', 'epidbot.configure')];
         }
         try {
-            const plots = await this.client.listPlots();
+            const plots = (await this.client.listPlots())
+                .filter((p) => p.code_snippet && p.code_snippet.trim());
             if (plots.length === 0) {
-                return [this.createInfoItem('No plots found')];
+                return [this.createInfoItem('No plots with code snippets found')];
             }
             return plots
                 .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())

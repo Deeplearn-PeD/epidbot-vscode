@@ -6,10 +6,9 @@ export class PlotTreeItem extends vscode.TreeItem {
   constructor(public readonly plot: Plot) {
     super(plot.filename, vscode.TreeItemCollapsibleState.None);
 
-    const hasCode = plot.code_snippet && plot.code_snippet.trim().length > 0;
     this.description = plot.description || plot.source;
-    this.tooltip = `${plot.filename}\nSource: ${plot.source}\nSize: ${plot.width}x${plot.height}\nCode snippet: ${hasCode ? 'Yes' : 'No'}`;
-    this.contextValue = hasCode ? 'plotItem+code' : 'plotItem';
+    this.tooltip = `${plot.filename}\nSource: ${plot.source}\nSize: ${plot.width}x${plot.height}`;
+    this.contextValue = 'plotItem+code';
     this.iconPath = new vscode.ThemeIcon('file-media');
   }
 }
@@ -43,10 +42,11 @@ export class PlotsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     }
 
     try {
-      const plots = await this.client.listPlots();
+      const plots = (await this.client.listPlots())
+        .filter((p) => p.code_snippet && p.code_snippet.trim());
 
       if (plots.length === 0) {
-        return [this.createInfoItem('No plots found')];
+        return [this.createInfoItem('No plots with code snippets found')];
       }
 
       return plots
